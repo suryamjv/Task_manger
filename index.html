@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Task Tracker</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b22; --panel2:#1e242e; --line:#2a323d;
+    --text:#e7ecf3; --muted:#9aa7b8; --accent:#4f8cff; --accent2:#6ee7b7;
+    --hi:#ffb454; --danger:#ff6b6b; --done:#43c59e; --prog:#4f8cff; --block:#ff6b6b; --idle:#8a97a8;
+    --chip:#232b36; --shadow:0 8px 30px rgba(0,0,0,.35);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6fa; --panel:#ffffff; --panel2:#f7f9fc; --line:#e3e8ef;
+      --text:#1a2430; --muted:#5a6b7e; --chip:#eef2f7; --shadow:0 6px 24px rgba(20,40,70,.08);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14.5px;line-height:1.5}
+  header.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg),color-mix(in srgb,var(--bg) 85%,transparent));backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header.top h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:9px}
+  .logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:inline-block}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px}
+  .who{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+  .who input{background:var(--chip);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 9px;font-size:13px;width:150px}
+  .btn{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:8px 13px;font-size:13.5px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),#3b76e6);border-color:transparent;color:#fff}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:5px 9px;font-size:12px;border-radius:8px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+  .stat .n{font-size:26px;font-weight:800;line-height:1}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+  .stat.overdue .n{color:var(--danger)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .toolbar input[type=text], .toolbar select{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 11px;font-size:13.5px}
+  .toolbar input[type=text]{min-width:220px;flex:1}
+  .spacer{flex:1}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;position:relative;border-left:4px solid var(--idle)}
+  .card.s-progress{border-left-color:var(--prog)} .card.s-done{border-left-color:var(--done);opacity:.85} .card.s-blocked{border-left-color:var(--block)} .card.s-notstarted{border-left-color:var(--idle)}
+  .card h3{margin:0;font-size:15.5px;font-weight:700;display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+  .card h3 .txt{flex:1}
+  .card .desc{color:var(--muted);font-size:13px;margin:-4px 0 2px}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:600;display:inline-flex;gap:5px;align-items:center;color:var(--muted)}
+  .chip.holder{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--text);border-color:transparent}
+  .chip.me{background:color-mix(in srgb,var(--accent2) 22%,transparent)}
+  .badge{border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;color:#0b0e12}
+  .b-notstarted{background:var(--idle)} .b-progress{background:var(--prog);color:#fff} .b-blocked{background:var(--block);color:#fff} .b-done{background:var(--done);color:#08211a}
+  .prio{font-size:11px;font-weight:800;letter-spacing:.4px}
+  .prio.High{color:var(--danger)} .prio.Medium{color:var(--hi)} .prio.Low{color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .log{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;max-height:150px;overflow:auto;display:flex;flex-direction:column;gap:7px}
+  .log .entry{font-size:12.5px}
+  .log .entry .d{color:var(--accent);font-weight:700;font-size:11px}
+  .log .entry .who2{color:var(--muted);font-size:11px}
+  .empty{color:var(--muted);text-align:center;padding:50px 20px;border:1px dashed var(--line);border-radius:var(--radius)}
+  .due.soon{color:var(--hi)} .due.over{color:var(--danger);font-weight:700}
+  select.mini{background:var(--chip);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 7px;font-size:12px}
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal.open{display:flex}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:22px;box-shadow:var(--shadow)}
+  .sheet h2{margin:0 0 14px;font-size:17px}
+  .field{margin-bottom:12px;display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .field input,.field select,.field textarea{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 11px;font-size:14px;font-family:inherit}
+  .field textarea{resize:vertical;min-height:60px}
+  .field .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  .hint{font-size:12px;color:var(--muted);margin-top:2px}
+  .tagline{color:var(--muted);font-size:12.5px;margin:-6px 0 16px}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:24px}
+  .save-state{font-size:11.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1><span class="logo"></span> My Task Tracker</h1>
+  <div class="who">
+    <span>You:</span>
+    <input id="meName" placeholder="Your name" />
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tagline">Add tasks, log a daily update on each, and hand a task to a coworker when your part is done. Use <b>Manager report</b> to share a read-only status.</div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <button class="btn primary" onclick="openTask()">＋ Add task</button>
+    <input type="text" id="search" placeholder="Search tasks…" oninput="render()" />
+    <select id="fStatus" onchange="render()">
+      <option value="">All statuses</option>
+      <option>Not started</option><option>In progress</option><option>Blocked</option><option>Done</option>
+    </select>
+    <select id="fHolder" onchange="render()"><option value="">All owners</option></select>
+    <select id="sort" onchange="render()">
+      <option value="due">Sort: Due date</option>
+      <option value="prio">Sort: Priority</option>
+      <option value="added">Sort: Newest</option>
+      <option value="status">Sort: Status</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="btn ghost sm" onclick="openTeam()">👥 Team</button>
+    <button class="btn ghost sm" onclick="managerReport()">📤 Manager report</button>
+    <button class="btn ghost sm" onclick="exportJira()">🟦 Export for Jira</button>
+    <button class="btn ghost sm" onclick="exportData()">⬇ Backup</button>
+    <button class="btn ghost sm" onclick="document.getElementById('imp').click()">⬆ Restore</button>
+    <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(event)" />
+  </div>
+
+  <div id="board" class="grid"></div>
+  <div id="emptyState" class="empty" style="display:none">No tasks yet. Click <b>＋ Add task</b> to start tracking your work.</div>
+</div>
+
+<footer>
+  <span class="save-state" id="saveState"></span> · Data is saved in this browser. Use <b>Backup</b> regularly and to share with your manager.
+</footer>
+
+<!-- Add/Edit Task modal -->
+<div class="modal" id="taskModal">
+  <div class="sheet">
+    <h2 id="taskTitle">Add task</h2>
+    <input type="hidden" id="tId" />
+    <div class="field"><label>Task name</label><input id="tName" placeholder="e.g. Finalize Q3 report" /></div>
+    <div class="field"><label>Description</label><textarea id="tDesc" placeholder="What needs to be done?"></textarea></div>
+    <div class="field"><div class="two">
+      <div class="field" style="margin:0"><label>Status</label><select id="tStatus"><option>Not started</option><option>In progress</option><option>Blocked</option><option>Done</option></select></div>
+      <div class="field" style="margin:0"><label>Priority</label><select id="tPrio"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+    </div></div>
+    <div class="field"><div class="two">
+      <div class="field" style="margin:0"><label>Assigned by / source</label><input id="tSource" placeholder="e.g. Priya (Manager)" /></div>
+      <div class="field" style="margin:0"><label>Currently with</label><select id="tHolder"></select></div>
+    </div></div>
+    <div class="field"><label>Due date</label><input type="date" id="tDue" /></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('taskModal')">Cancel</button>
+      <button class="btn primary" onclick="saveTask()">Save task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Team modal -->
+<div class="modal" id="teamModal">
+  <div class="sheet">
+    <h2>Team roster</h2>
+    <p class="hint">These names appear in the "Currently with" list so you can hand off tasks. Your own name is always included.</p>
+    <div class="field"><label>Add a coworker</label><div class="row"><input id="newMember" placeholder="Coworker name" style="flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 11px" onkeydown="if(event.key==='Enter')addMember()" /><button class="btn primary" onclick="addMember()">Add</button></div></div>
+    <div id="memberList" class="row" style="margin-top:6px"></div>
+    <div class="modal-actions"><button class="btn primary" onclick="closeModal('teamModal')">Done</button></div>
+  </div>
+</div>
+
+<!-- Update modal -->
+<div class="modal" id="updModal">
+  <div class="sheet">
+    <h2>Daily update</h2>
+    <p class="hint" id="updFor"></p>
+    <input type="hidden" id="uId" />
+    <div class="field"><label>What's the progress today?</label><textarea id="uText" placeholder="e.g. Drafted sections 1–3, waiting on data from finance"></textarea></div>
+    <div class="field"><div class="two">
+      <div class="field" style="margin:0"><label>Update status to</label><select id="uStatus"><option>Not started</option><option>In progress</option><option>Blocked</option><option>Done</option></select></div>
+      <div class="field" style="margin:0"><label>Hand off to (optional)</label><select id="uHolder"></select></div>
+    </div></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('updModal')">Cancel</button>
+      <button class="btn primary" onclick="saveUpdate()">Log update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- storage (graceful fallback) ---------- */
+const KEY='taskTracker.v1';
+let memoryStore=null;
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
+  if(memoryStore)return memoryStore;
+  return null;
+}
+function persist(){
+  const data={me:state.me,team:state.team,tasks:state.tasks};
+  memoryStore=data;
+  let saved=false;
+  try{localStorage.setItem(KEY,JSON.stringify(data));saved=true;}catch(e){}
+  const el=document.getElementById('saveState');
+  el.textContent=saved? 'Saved ✓' : 'In-memory only — use Backup to keep your data';
+  if(saved){el.textContent='All changes saved ✓';}
+}
+
+/* ---------- state ---------- */
+let state=load() || {me:'',team:[],tasks:[]};
+if(!state.team) state.team=[];
+if(!state.tasks) state.tasks=[];
+
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function nowStamp(){const d=new Date();return d.toISOString().slice(0,10)+' '+d.toTimeString().slice(0,5);}
+function uid(){return 't'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);}
+function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* ---------- people ---------- */
+function people(){
+  const me=state.me||'Me';
+  const set=[me,...state.team.filter(t=>t&&t!==me)];
+  return [...new Set(set)];
+}
+function fillHolderSelects(){
+  const opts=people().map(p=>`<option>${esc(p)}</option>`).join('');
+  ['tHolder','uHolder','fHolder'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const cur=el.value;
+    if(id==='fHolder'){el.innerHTML='<option value="">All owners</option>'+opts;}
+    else if(id==='uHolder'){el.innerHTML='<option value="">— keep with current —</option>'+opts;}
+    else{el.innerHTML=opts;}
+    if(cur)el.value=cur;
+  });
+}
+
+/* ---------- modals ---------- */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function openTask(id){
+  fillHolderSelects();
+  const t=id? state.tasks.find(x=>x.id===id):null;
+  document.getElementById('taskTitle').textContent=t?'Edit task':'Add task';
+  document.getElementById('tId').value=t?t.id:'';
+  document.getElementById('tName').value=t?t.name:'';
+  document.getElementById('tDesc').value=t?t.desc:'';
+  document.getElementById('tStatus').value=t?t.status:'Not started';
+  document.getElementById('tPrio').value=t?t.prio:'Medium';
+  document.getElementById('tSource').value=t?t.source:'';
+  document.getElementById('tHolder').value=t?t.holder:(state.me||'Me');
+  document.getElementById('tDue').value=t?t.due:'';
+  openModal('taskModal');
+  setTimeout(()=>document.getElementById('tName').focus(),50);
+}
+function saveTask(){
+  const name=document.getElementById('tName').value.trim();
+  if(!name){alert('Please enter a task name.');return;}
+  const id=document.getElementById('tId').value;
+  const obj={
+    name, desc:document.getElementById('tDesc').value.trim(),
+    status:document.getElementById('tStatus').value,
+    prio:document.getElementById('tPrio').value,
+    source:document.getElementById('tSource').value.trim(),
+    holder:document.getElementById('tHolder').value,
+    due:document.getElementById('tDue').value,
+  };
+  if(id){
+    const t=state.tasks.find(x=>x.id===id);
+    const wasDone=t.status==='Done';
+    Object.assign(t,obj);
+    if(obj.status==='Done'&&!wasDone)t.completed=todayISO();
+    if(obj.status!=='Done')t.completed='';
+  }else{
+    state.tasks.push({id:uid(),...obj,added:todayISO(),completed:obj.status==='Done'?todayISO():'',log:[]});
+  }
+  persist();closeModal('taskModal');render();
+}
+function delTask(id){
+  const t=state.tasks.find(x=>x.id===id);
+  if(!confirm('Delete "'+(t?t.name:'this task')+'"? This cannot be undone.'))return;
+  state.tasks=state.tasks.filter(x=>x.id!==id);persist();render();
+}
+
+/* ---------- updates ---------- */
+function openUpd(id){
+  fillHolderSelects();
+  const t=state.tasks.find(x=>x.id===id);
+  document.getElementById('uId').value=id;
+  document.getElementById('updFor').textContent='Task: '+t.name+'  ·  currently with '+t.holder;
+  document.getElementById('uText').value='';
+  document.getElementById('uStatus').value=t.status;
+  document.getElementById('uHolder').value='';
+  openModal('updModal');
+  setTimeout(()=>document.getElementById('uText').focus(),50);
+}
+function saveUpdate(){
+  const id=document.getElementById('uId').value;
+  const t=state.tasks.find(x=>x.id===id);
+  const text=document.getElementById('uText').value.trim();
+  const newStatus=document.getElementById('uStatus').value;
+  const handTo=document.getElementById('uHolder').value;
+  const by=state.me||t.holder||'Me';
+  let note=text;
+  if(newStatus!==t.status){note=(note?note+' ':'')+'[status → '+newStatus+']';}
+  if(handTo&&handTo!==t.holder){note=(note?note+' ':'')+'[handed off '+t.holder+' → '+handTo+']';}
+  if(!note){alert('Add a note, a status change, or a handoff.');return;}
+  t.log.unshift({when:nowStamp(),by,text:note});
+  t.status=newStatus;
+  if(newStatus==='Done'&&!t.completed)t.completed=todayISO();
+  if(newStatus!=='Done')t.completed='';
+  if(handTo)t.holder=handTo;
+  persist();closeModal('updModal');render();
+}
+
+/* ---------- team ---------- */
+function openTeam(){renderTeam();openModal('teamModal');}
+function addMember(){
+  const v=document.getElementById('newMember').value.trim();
+  if(v&&!state.team.includes(v)){state.team.push(v);}
+  document.getElementById('newMember').value='';
+  persist();renderTeam();fillHolderSelects();
+}
+function removeMember(n){state.team=state.team.filter(x=>x!==n);persist();renderTeam();fillHolderSelects();}
+function renderTeam(){
+  const el=document.getElementById('memberList');
+  el.innerHTML=state.team.length? state.team.map(m=>`<span class="chip">${esc(m)} <a onclick="removeMember('${esc(m).replace(/'/g,"\\'")}')" style="cursor:pointer;color:var(--danger);font-weight:800">✕</a></span>`).join('') : '<span class="hint">No coworkers added yet.</span>';
+}
+
+/* ---------- rendering ---------- */
+const statusClass={'Not started':'notstarted','In progress':'progress','Blocked':'blocked','Done':'done'};
+const prioRank={High:0,Medium:1,Low:2};
+const statusRank={'Blocked':0,'In progress':1,'Not started':2,'Done':3};
+
+function dueInfo(t){
+  if(!t.due)return{txt:'No due date',cls:''};
+  const d=new Date(t.due+'T00:00'),now=new Date(todayISO()+'T00:00');
+  const days=Math.round((d-now)/86400000);
+  if(t.status==='Done')return{txt:'Due '+t.due,cls:''};
+  if(days<0)return{txt:'Overdue '+Math.abs(days)+'d',cls:'over'};
+  if(days===0)return{txt:'Due today',cls:'soon'};
+  if(days<=2)return{txt:'Due in '+days+'d',cls:'soon'};
+  return{txt:'Due '+t.due,cls:''};
+}
+
+function stats(){
+  const t=state.tasks;
+  const by=s=>t.filter(x=>x.status===s).length;
+  const overdue=t.filter(x=>x.status!=='Done'&&x.due&&new Date(x.due+'T00:00')<new Date(todayISO()+'T00:00')).length;
+  const mine=t.filter(x=>x.holder===(state.me||'Me')&&x.status!=='Done').length;
+  return[
+    {n:t.length,l:'Total'},
+    {n:mine,l:'With me'},
+    {n:by('In progress'),l:'In progress'},
+    {n:by('Blocked'),l:'Blocked'},
+    {n:overdue,l:'Overdue',cls:'overdue'},
+    {n:by('Done'),l:'Done'},
+  ];
+}
+
+function render(){
+  document.getElementById('meName').value=state.me;
+  fillHolderSelects();
+  // stats
+  document.getElementById('stats').innerHTML=stats().map(s=>`<div class="stat ${s.cls||''}"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join('');
+  // filters
+  const q=document.getElementById('search').value.toLowerCase();
+  const fs=document.getElementById('fStatus').value;
+  const fh=document.getElementById('fHolder').value;
+  const sort=document.getElementById('sort').value;
+  let list=state.tasks.filter(t=>{
+    if(fs&&t.status!==fs)return false;
+    if(fh&&t.holder!==fh)return false;
+    if(q&&!(t.name+' '+t.desc+' '+t.source+' '+t.holder).toLowerCase().includes(q))return false;
+    return true;
+  });
+  list.sort((a,b)=>{
+    if(sort==='prio')return prioRank[a.prio]-prioRank[b.prio];
+    if(sort==='added')return (b.added||'').localeCompare(a.added||'');
+    if(sort==='status')return statusRank[a.status]-statusRank[b.status];
+    // due
+    const ad=a.due||'9999',bd=b.due||'9999';return ad.localeCompare(bd);
+  });
+  const board=document.getElementById('board');
+  document.getElementById('emptyState').style.display=state.tasks.length?'none':'block';
+  board.innerHTML=list.map(t=>{
+    const di=dueInfo(t);
+    const isMe=t.holder===(state.me||'Me');
+    const logHtml=t.log.length? t.log.slice(0,4).map(e=>`<div class="entry"><span class="d">${esc(e.when)}</span> <span class="who2">· ${esc(e.by)}</span><br>${esc(e.text)}</div>`).join('') : '<div class="hint">No updates yet.</div>';
+    return `<div class="card s-${statusClass[t.status]}">
+      <h3><span class="txt">${esc(t.name)}</span><span class="badge b-${statusClass[t.status]}">${t.status}</span></h3>
+      ${t.desc?`<div class="desc">${esc(t.desc)}</div>`:''}
+      <div class="meta">
+        <span class="prio ${t.prio}">● ${t.prio}</span>
+        <span class="chip holder ${isMe?'me':''}">🧑 ${esc(t.holder)}</span>
+        ${t.source?`<span class="chip">from ${esc(t.source)}</span>`:''}
+        <span class="chip due ${di.cls}">📅 ${di.txt}</span>
+      </div>
+      <div class="log">${logHtml}${t.log.length>4?`<div class="hint">+${t.log.length-4} more…</div>`:''}</div>
+      <div class="row">
+        <button class="btn primary sm" onclick="openUpd('${t.id}')">＋ Daily update</button>
+        <select class="mini" onchange="quickHand('${t.id}',this.value);this.selectedIndex=0">
+          <option value="">Hand off to…</option>
+          ${people().filter(p=>p!==t.holder).map(p=>`<option>${esc(p)}</option>`).join('')}
+        </select>
+        <div class="spacer"></div>
+        <button class="btn ghost sm" onclick="openTask('${t.id}')">Edit</button>
+        <button class="btn ghost sm" onclick="delTask('${t.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+  persist();
+}
+
+function quickHand(id,to){
+  if(!to)return;
+  const t=state.tasks.find(x=>x.id===id);
+  if(to===t.holder)return;
+  t.log.unshift({when:nowStamp(),by:state.me||t.holder||'Me',text:'[handed off '+t.holder+' → '+to+']'});
+  t.holder=to;persist();render();
+}
+
+/* ---------- backup / restore ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify({me:state.me,team:state.team,tasks:state.tasks},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='task-tracker-backup-'+todayISO()+'.json';a.click();
+}
+function importData(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);state.me=d.me||state.me;state.team=d.team||[];state.tasks=d.tasks||[];persist();render();alert('Data restored.');}catch(e){alert('Could not read that file.');}};
+  r.readAsText(f);ev.target.value='';
+}
+
+/* ---------- Jira CSV export ---------- */
+function csvCell(s){s=(s==null?'':String(s));return '"'+s.replace(/"/g,'""')+'"';}
+function exportJira(){
+  // Jira import maps these headers on the "Import issues from CSV" screen.
+  const jStatus={'Not started':'To Do','In progress':'In Progress','Blocked':'Blocked','Done':'Done'};
+  const header=['Summary','Description','Issue Type','Status','Priority','Assignee','Due Date','Labels'];
+  const lines=[header.map(csvCell).join(',')];
+  state.tasks.forEach(t=>{
+    let desc=t.desc||'';
+    if(t.source)desc+= (desc?'\n\n':'')+'Assigned by / source: '+t.source;
+    if(t.log&&t.log.length){desc+='\n\nUpdate log:\n'+t.log.map(e=>'• '+e.when+' ('+e.by+'): '+e.text).join('\n');}
+    lines.push([
+      t.name, desc, 'Task', (jStatus[t.status]||'To Do'), (t.prio||'Medium'),
+      (t.holder||''), (t.due||''), 'from-tracker'
+    ].map(csvCell).join(','));
+  });
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='jira-import-'+todayISO()+'.csv';a.click();
+  setTimeout(()=>alert('Jira CSV downloaded.\n\nIn Jira: Project settings ▸ or Filters ▸ "Import issues from CSV". Map:\n• Summary → Summary\n• Assignee → Assignee (Jira matches by name/email)\n• Status, Priority, Due Date → same fields\n\nAssignee names must match real Jira users to auto-assign.'),200);
+}
+
+/* ---------- manager report ---------- */
+function managerReport(){
+  const t=[...state.tasks].sort((a,b)=>statusRank[a.status]-statusRank[b.status]||prioRank[a.prio]-prioRank[b.prio]);
+  const rows=t.map(x=>{
+    const last=x.log[0]?`${esc(x.log[0].text)} <span style="color:#888">(${esc(x.log[0].when)})</span>`:'—';
+    const di=dueInfo(x);
+    return `<tr>
+      <td><b>${esc(x.name)}</b>${x.desc?`<br><span style="color:#667">${esc(x.desc)}</span>`:''}</td>
+      <td><span class="s s-${statusClass[x.status]}">${x.status}</span></td>
+      <td>${esc(x.prio)}</td>
+      <td>${esc(x.holder)}</td>
+      <td class="${di.cls}">${di.txt}</td>
+      <td>${last}</td>
+    </tr>`;
+  }).join('');
+  const done=t.filter(x=>x.status==='Done').length, prog=t.filter(x=>x.status==='In progress').length, block=t.filter(x=>x.status==='Blocked').length;
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Status report — ${esc(state.me||'')} — ${todayISO()}</title>
+  <style>body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:32px;color:#1a2430;background:#fff}
+  h1{font-size:20px;margin:0 0 4px}.sub{color:#667;margin:0 0 18px}
+  .kpis{display:flex;gap:14px;margin:0 0 18px;flex-wrap:wrap}.kpi{border:1px solid #e3e8ef;border-radius:10px;padding:10px 16px}.kpi b{font-size:22px;display:block}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}th,td{border:1px solid #e3e8ef;padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f4f6fa;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:#5a6b7e}
+  .s{border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:700;color:#fff}
+  .s-progress{background:#4f8cff}.s-blocked{background:#ff6b6b}.s-done{background:#43c59e;color:#08211a}.s-notstarted{background:#8a97a8}
+  .over{color:#d33;font-weight:700}.soon{color:#c77c00;font-weight:700}
+  @media print{.noprint{display:none}}
+  .noprint{margin-top:18px;color:#667;font-size:12px}</style></head>
+  <body><h1>Work status — ${esc(state.me||'Me')}</h1>
+  <p class="sub">Generated ${nowStamp()} · ${t.length} tasks</p>
+  <div class="kpis"><div class="kpi"><b>${prog}</b>In progress</div><div class="kpi"><b>${block}</b>Blocked</div><div class="kpi"><b>${done}</b>Done</div><div class="kpi"><b>${t.length}</b>Total</div></div>
+  <table><thead><tr><th>Task</th><th>Status</th><th>Priority</th><th>Currently with</th><th>Due</th><th>Latest update</th></tr></thead><tbody>${rows||'<tr><td colspan=6>No tasks.</td></tr>'}</tbody></table>
+  <p class="noprint">Read-only snapshot. Print or "Save as PDF" to share, or send this file to your manager.</p></body></html>`;
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+  else{const blob=new Blob([html],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='status-report-'+todayISO()+'.html';a.click();}
+}
+
+/* ---------- init ---------- */
+document.getElementById('meName').addEventListener('input',e=>{state.me=e.target.value;persist();fillHolderSelects();});
+[...document.querySelectorAll('.modal')].forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')[...document.querySelectorAll('.modal.open')].forEach(m=>m.classList.remove('open'));});
+
+/* seed a friendly example on first run */
+if(state.tasks.length===0 && state.team.length===0 && !state.me){
+  state.me='Me';
+  state.tasks.push({id:uid(),name:'Example: Finalize onboarding deck',desc:'Delete me once you add your own tasks.',status:'In progress',prio:'High',source:'Manager',holder:'Me',added:todayISO(),completed:'',due:todayISO(),log:[{when:nowStamp(),by:'Me',text:'Created tracker — added first update.'}]});
+}
+render();
+</script>
+</body>
+</html>

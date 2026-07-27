@@ -1,0 +1,10 @@
+# Never publish personal task data / backups
+*.json
+*backup*
+task-tracker-backup-*.json
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
