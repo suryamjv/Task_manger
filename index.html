@@ -178,7 +178,7 @@
 
 <script>
 /* ---------- storage (graceful fallback) ---------- */
-const KEY='taskTracker.v1';
+const KEY='taskTracker.v2';
 let memoryStore=null;
 function load(){
   try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
@@ -487,10 +487,19 @@ document.getElementById('meName').addEventListener('input',e=>{state.me=e.target
 [...document.querySelectorAll('.modal')].forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')[...document.querySelectorAll('.modal.open')].forEach(m=>m.classList.remove('open'));});
 
-/* seed a friendly example on first run */
+/* seed with current work snapshot on first run */
 if(state.tasks.length===0 && state.team.length===0 && !state.me){
-  state.me='Me';
-  state.tasks.push({id:uid(),name:'Example: Finalize onboarding deck',desc:'Delete me once you add your own tasks.',status:'In progress',prio:'High',source:'Manager',holder:'Me',added:todayISO(),completed:'',due:todayISO(),log:[{when:nowStamp(),by:'Me',text:'Created tracker — added first update.'}]});
+  state.me='Surya';
+  state.team=['Ameya Dandekar','Snehali Sutar','Dipesh Grag'];
+  state.tasks=[
+    {id:'t_uepl_api',name:'UEPL-API Integration',desc:'Sending vendor documents to the SAP from Power Automate',status:'In progress',prio:'Medium',source:'Dipesh Grag',holder:'Ameya Dandekar',added:'2026-07-27',completed:'',due:'',log:[
+      {when:'2026-07-27 12:57',by:'Surya',text:'Targeting to move it to prod by this weekend. As we are doing some testing in UAT system'},
+      {when:'2026-07-27 12:56',by:'Surya',text:'[handed off Me → AMEYA DANDEKAR]'}
+    ]},
+    {id:'t_nonuepl',name:'Non-UEPL Work Flow',desc:'Creating VOP for non-UEPL users',status:'In progress',prio:'Medium',source:'Dipesh Grag',holder:'Snehali Sutar',added:'2026-07-27',completed:'',due:'',log:[
+      {when:'2026-07-27 13:00',by:'Surya',text:'Done with customers from India and International - under review'}
+    ]}
+  ];
 }
 render();
 </script>
